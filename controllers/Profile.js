@@ -1,5 +1,10 @@
-const Profile = require("../models/Profile");
-const User = require("../models/User");
+const Profile = require("../models/Profile")
+const CourseProgress = require("../models/CourseProgress")
+
+const Course = require("../models/Course")
+const User = require("../models/User")
+const { uploadImageToCloudinary } = require("../utils/imageUploader")
+const mongoose = require("mongoose");
 
 //updateProfile handler
 exports.updateProfile = async (req,res) => {
@@ -53,6 +58,17 @@ exports.deleteAccount = async (req,res) => {
                 success:false,
                 message:'User not found',
             })
+        }
+        // Delete Assosiated Profile with the User
+        await Profile.findByIdAndDelete({
+        _id: new mongoose.Types.ObjectId(user.additionalDetails),
+        })
+        for (const courseId of user.courses) {
+            await Course.findByIdAndUpdate(
+            courseId,
+             { $pull: { studentsEnroled: id } },
+            { new: true }
+            )
         }
         //delete profile
         await Profile.findByIdAndDelete({_id:userDetails.additionalDetails});
